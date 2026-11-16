@@ -2,6 +2,8 @@
 
 A browser-based campaign tracker for **Four Against Darkness (4AD)** and **Solo Game Master's Guide** journaling, styled as weathered yellow-tan parchment with red-brown ink lines.
 
+**Live App:** [https://smileywiley.github.io/four-against-darkness/](https://smileywiley.github.io/four-against-darkness/)
+
 ## Features
 
 - **4-Character Party Tracker & Marching Order:** Persistent party strip (`#1`–`#4`), quick `+`/`-` Life controls, Alive/Dead/Stone status, Lantern & Bandaged toggles, Core 8 classes + Custom Class with auto-calculated Melee/Ranged/Defense stats, Blessings, Healings, Clues, Gold/Gems/Jewelry, Spells/Scrolls checklist, Equipment, Traits, and Personal Quests.
