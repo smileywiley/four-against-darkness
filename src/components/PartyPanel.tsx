@@ -37,7 +37,7 @@ export function PartyPanel({ characters, selectedCharId, onUpdateChar }: PartyPa
         flex: 1,
         overflowY: 'auto',
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 330px), 1fr))',
         gap: '12px',
         paddingRight: '4px',
       }}
@@ -227,8 +227,8 @@ export function PartyPanel({ characters, selectedCharId, onUpdateChar }: PartyPa
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '88px repeat(3, 1fr) 64px',
-                  gap: '5px',
+                  gridTemplateColumns: '78px minmax(0, 1fr) minmax(0, 1fr) 40px 48px',
+                  gap: '6px',
                   alignItems: 'center',
                   fontWeight: 700,
                   color: 'var(--ink-crimson)',
@@ -248,8 +248,8 @@ export function PartyPanel({ characters, selectedCharId, onUpdateChar }: PartyPa
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '88px repeat(3, 1fr) 64px',
-                  gap: '5px',
+                  gridTemplateColumns: '78px minmax(0, 1fr) minmax(0, 1fr) 40px 48px',
+                  gap: '6px',
                   alignItems: 'center',
                   marginBottom: '4px',
                 }}
@@ -258,14 +258,14 @@ export function PartyPanel({ characters, selectedCharId, onUpdateChar }: PartyPa
                 <input
                   type="number"
                   className="ink-input mono"
-                  style={{ textAlign: 'center', padding: '2px 4px' }}
+                  style={{ width: '100%', minWidth: 0, maxWidth: '64px', justifySelf: 'center', textAlign: 'center', padding: '2px 4px' }}
                   value={char.meleeWeaponMod}
                   onChange={(e) => onUpdateChar({ ...char, meleeWeaponMod: Number(e.target.value) || 0 })}
                 />
                 <input
                   type="number"
                   className="ink-input mono"
-                  style={{ textAlign: 'center', padding: '2px 4px' }}
+                  style={{ width: '100%', minWidth: 0, maxWidth: '64px', justifySelf: 'center', textAlign: 'center', padding: '2px 4px' }}
                   value={char.meleeTraitMod}
                   onChange={(e) => onUpdateChar({ ...char, meleeTraitMod: Number(e.target.value) || 0 })}
                 />
@@ -281,8 +281,8 @@ export function PartyPanel({ characters, selectedCharId, onUpdateChar }: PartyPa
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '88px repeat(3, 1fr) 64px',
-                  gap: '5px',
+                  gridTemplateColumns: '78px minmax(0, 1fr) minmax(0, 1fr) 40px 48px',
+                  gap: '6px',
                   alignItems: 'center',
                   marginBottom: '4px',
                 }}
@@ -291,14 +291,14 @@ export function PartyPanel({ characters, selectedCharId, onUpdateChar }: PartyPa
                 <input
                   type="number"
                   className="ink-input mono"
-                  style={{ textAlign: 'center', padding: '2px 4px' }}
+                  style={{ width: '100%', minWidth: 0, maxWidth: '64px', justifySelf: 'center', textAlign: 'center', padding: '2px 4px' }}
                   value={char.rangedWeaponMod}
                   onChange={(e) => onUpdateChar({ ...char, rangedWeaponMod: Number(e.target.value) || 0 })}
                 />
                 <input
                   type="number"
                   className="ink-input mono"
-                  style={{ textAlign: 'center', padding: '2px 4px' }}
+                  style={{ width: '100%', minWidth: 0, maxWidth: '64px', justifySelf: 'center', textAlign: 'center', padding: '2px 4px' }}
                   value={char.rangedTraitMod}
                   onChange={(e) => onUpdateChar({ ...char, rangedTraitMod: Number(e.target.value) || 0 })}
                 />
@@ -314,8 +314,8 @@ export function PartyPanel({ characters, selectedCharId, onUpdateChar }: PartyPa
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '88px repeat(3, 1fr) 64px',
-                  gap: '5px',
+                  gridTemplateColumns: '78px minmax(0, 1fr) minmax(0, 1fr) 40px 48px',
+                  gap: '6px',
                   alignItems: 'center',
                 }}
               >
@@ -323,7 +323,7 @@ export function PartyPanel({ characters, selectedCharId, onUpdateChar }: PartyPa
                 <input
                   type="number"
                   className="ink-input mono"
-                  style={{ textAlign: 'center', padding: '2px 4px' }}
+                  style={{ width: '100%', minWidth: 0, maxWidth: '64px', justifySelf: 'center', textAlign: 'center', padding: '2px 4px' }}
                   title="Armor modifier"
                   value={char.armorMod}
                   onChange={(e) => onUpdateChar({ ...char, armorMod: Number(e.target.value) || 0 })}
@@ -331,7 +331,7 @@ export function PartyPanel({ characters, selectedCharId, onUpdateChar }: PartyPa
                 <input
                   type="number"
                   className="ink-input mono"
-                  style={{ textAlign: 'center', padding: '2px 4px' }}
+                  style={{ width: '100%', minWidth: 0, maxWidth: '64px', justifySelf: 'center', textAlign: 'center', padding: '2px 4px' }}
                   title="Shield + Trait modifier"
                   value={char.shieldMod + char.defenseTraitMod}
                   onChange={(e) =>
