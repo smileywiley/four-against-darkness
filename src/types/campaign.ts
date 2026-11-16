@@ -75,7 +75,7 @@ export type GridStampType =
   | 'fountain'
   | 'altar';
 
-export type DoorType = 'door' | 'secret' | 'locked';
+export type DoorType = 'door' | 'secret' | 'locked' | 'open';
 
 export interface MapPin {
   id: string;

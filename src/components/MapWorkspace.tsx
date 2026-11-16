@@ -34,6 +34,7 @@ type ToolMode =
   | 'door'
   | 'secret'
   | 'locked'
+  | 'open'
   | 'stamp'
   | 'pin'
   | 'party';
@@ -135,7 +136,7 @@ export function MapWorkspace({
     const row = Math.floor(py / cellSize);
     if (col < 0 || col >= activeMap.cols || row < 0 || row >= activeMap.rows) return;
 
-    if (tool === 'door' || tool === 'secret' || tool === 'locked') {
+    if (tool === 'door' || tool === 'secret' || tool === 'locked' || tool === 'open') {
       const fx = (px % cellSize) / cellSize;
       const fy = (py % cellSize) / cellSize;
       const distTop = fy;
@@ -422,6 +423,14 @@ export function MapWorkspace({
             >
               Locked
             </button>
+            <button
+              type="button"
+              className={`ink-btn ink-btn-sm ${tool === 'open' ? 'ink-btn-active' : ''}`}
+              onClick={() => setTool('open')}
+              title="Click a wall edge to erase/open it (e.g. dungeon entrance)"
+            >
+              Entrance
+            </button>
 
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
               <button
@@ -629,7 +638,7 @@ export function MapWorkspace({
               const x = c * cellSize;
               const y = r * cellSize;
               const walls: React.ReactNode[] = [];
-              if (!isFilled(r - 1, c)) {
+              if (!isFilled(r - 1, c) && activeMap.edges[`h:${r}:${c}`] !== 'open') {
                 walls.push(
                   <line
                     key={`${key}-t`}
@@ -643,7 +652,7 @@ export function MapWorkspace({
                   />
                 );
               }
-              if (!isFilled(r + 1, c)) {
+              if (!isFilled(r + 1, c) && activeMap.edges[`h:${r + 1}:${c}`] !== 'open') {
                 walls.push(
                   <line
                     key={`${key}-b`}
@@ -657,7 +666,7 @@ export function MapWorkspace({
                   />
                 );
               }
-              if (!isFilled(r, c - 1)) {
+              if (!isFilled(r, c - 1) && activeMap.edges[`v:${r}:${c}`] !== 'open') {
                 walls.push(
                   <line
                     key={`${key}-l`}
@@ -671,7 +680,7 @@ export function MapWorkspace({
                   />
                 );
               }
-              if (!isFilled(r, c + 1)) {
+              if (!isFilled(r, c + 1) && activeMap.edges[`v:${r}:${c + 1}`] !== 'open') {
                 walls.push(
                   <line
                     key={`${key}-r`}
@@ -688,11 +697,31 @@ export function MapWorkspace({
               return walls;
             })}
 
-            {/* Doors on Edges */}
+            {/* Doors & Open/Entrance Edges */}
             {Object.entries(activeMap.edges).map(([edgeKey, doorType]) => {
               const [dir, rStr, cStr] = edgeKey.split(':');
               const r = Number(rStr);
               const c = Number(cStr);
+
+              if (doorType === 'open') {
+                const isOuter =
+                  (dir === 'h' && (r === 0 || r === activeMap.rows)) ||
+                  (dir === 'v' && (c === 0 || c === activeMap.cols));
+                if (!isOuter) return null;
+                return (
+                  <line
+                    key={edgeKey}
+                    x1={dir === 'h' ? c * cellSize : c * cellSize}
+                    y1={dir === 'h' ? r * cellSize : r * cellSize}
+                    x2={dir === 'h' ? (c + 1) * cellSize : c * cellSize}
+                    y2={dir === 'h' ? r * cellSize : (r + 1) * cellSize}
+                    stroke="#f7ebd0"
+                    strokeWidth={4}
+                    style={{ pointerEvents: 'none' }}
+                  />
+                );
+              }
+
               const cx = dir === 'h' ? c * cellSize + cellSize / 2 : c * cellSize;
               const cy = dir === 'h' ? r * cellSize : r * cellSize + cellSize / 2;
               const w = dir === 'h' ? cellSize * 0.48 : 6;

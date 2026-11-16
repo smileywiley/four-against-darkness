@@ -30,6 +30,8 @@ export function createBlankDungeon(name = 'Level 1 — The Sunken Crypt', depth 
     },
     edges: {
       'h:26:9': 'door',
+      'h:27:9': 'open',
+      'h:27:10': 'open',
     },
     pins: [
       {
