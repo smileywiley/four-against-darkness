@@ -54,14 +54,21 @@ export function JournalPanel({
   const [title, setTitle] = useState(prefillEntry?.title ?? '');
   const [content, setContent] = useState(prefillEntry?.content ?? '');
   const [linkedMapId, setLinkedMapId] = useState(prefillEntry?.linkedMapId ?? '');
+  const [linkedPinId, setLinkedPinId] = useState(prefillEntry?.linkedPinId ?? '');
   const [selectedThreadIds, setSelectedThreadIds] = useState<string[]>([]);
 
   // Sync prefill when triggered from Map Pin
-  if (prefillEntry && (prefillEntry.title !== title || prefillEntry.linkedMapId !== linkedMapId)) {
+  if (
+    prefillEntry &&
+    (prefillEntry.title !== title ||
+      prefillEntry.linkedMapId !== linkedMapId ||
+      prefillEntry.linkedPinId !== linkedPinId)
+  ) {
     setEntryType(prefillEntry.entryType ?? 'discovery');
     setTitle(prefillEntry.title ?? '');
     setContent(prefillEntry.content ?? '');
     setLinkedMapId(prefillEntry.linkedMapId ?? '');
+    setLinkedPinId(prefillEntry.linkedPinId ?? '');
     setActiveTab('log');
     onClearPrefill?.();
   }
@@ -70,6 +77,11 @@ export function JournalPanel({
   const [threadType, setThreadType] = useState<StoryThreadType>('quest');
   const [threadName, setThreadName] = useState('');
   const [threadNotes, setThreadNotes] = useState('');
+  const [threadMapId, setThreadMapId] = useState('');
+  const [threadPinId, setThreadPinId] = useState('');
+
+  const selectedComposeMap = dungeons.find((d) => d.id === linkedMapId);
+  const selectedThreadMap = dungeons.find((d) => d.id === threadMapId);
 
   const handleSaveEntry = () => {
     if (!title.trim() && !content.trim()) return;
@@ -81,10 +93,12 @@ export function JournalPanel({
       title: title.trim() || ENTRY_TYPE_LABELS[entryType],
       content: content.trim(),
       linkedMapId: linkedMapId || undefined,
+      linkedPinId: linkedMapId && linkedPinId ? linkedPinId : undefined,
       threadIds: selectedThreadIds,
     });
     setTitle('');
     setContent('');
+    setLinkedPinId('');
     setSelectedThreadIds([]);
   };
 
@@ -187,7 +201,10 @@ export function JournalPanel({
                 className="ink-select"
                 style={{ maxWidth: '150px', fontSize: '0.82rem' }}
                 value={linkedMapId}
-                onChange={(e) => setLinkedMapId(e.target.value)}
+                onChange={(e) => {
+                  setLinkedMapId(e.target.value);
+                  setLinkedPinId('');
+                }}
               >
                 <option value="">No map link</option>
                 {dungeons.map((d) => (
@@ -196,6 +213,22 @@ export function JournalPanel({
                   </option>
                 ))}
               </select>
+
+              {selectedComposeMap && selectedComposeMap.pins.length > 0 && (
+                <select
+                  className="ink-select"
+                  style={{ maxWidth: '150px', fontSize: '0.82rem' }}
+                  value={linkedPinId}
+                  onChange={(e) => setLinkedPinId(e.target.value)}
+                >
+                  <option value="">Any pin</option>
+                  {selectedComposeMap.pins.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      Pin #{p.label}{p.title ? `: ${p.title}` : ''}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
             <textarea
@@ -371,11 +404,17 @@ export function JournalPanel({
 
                     {(linkedMap || entry.threadIds.length > 0) && (
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: '2px' }}>
-                        {linkedMap && (
-                          <span className="mono" style={{ fontSize: '0.72rem', color: 'var(--ink-secondary)' }}>
-                            📍 {linkedMap.name}
-                          </span>
-                        )}
+                        {linkedMap && (() => {
+                          const linkedPin = entry.linkedPinId
+                            ? linkedMap.pins.find((p) => p.id === entry.linkedPinId)
+                            : null;
+                          return (
+                            <span className="mono" style={{ fontSize: '0.72rem', color: 'var(--ink-secondary)' }}>
+                              📍 {linkedMap.name}
+                              {linkedPin ? ` · Pin #${linkedPin.label}${linkedPin.title ? `: ${linkedPin.title}` : ''}` : ''}
+                            </span>
+                          );
+                        })()}
                         {entry.threadIds.map((tid) => {
                           const t = threads.find((item) => item.id === tid);
                           if (!t) return null;
@@ -415,7 +454,7 @@ export function JournalPanel({
               gap: '6px',
             }}
           >
-            <div style={{ display: 'flex', gap: '6px' }}>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
               <select
                 className="ink-select"
                 value={threadType}
@@ -428,7 +467,7 @@ export function JournalPanel({
               </select>
               <input
                 className="ink-input"
-                style={{ flex: 1 }}
+                style={{ flex: 1, minWidth: '140px' }}
                 placeholder="Name (e.g., Brother Aldous, The Iron Key)..."
                 value={threadName}
                 onChange={(e) => setThreadName(e.target.value)}
@@ -444,20 +483,57 @@ export function JournalPanel({
                     name: threadName.trim(),
                     status: 'active',
                     notes: threadNotes.trim(),
+                    linkedMapId: threadMapId || undefined,
+                    linkedPinId: threadMapId && threadPinId ? threadPinId : undefined,
                   });
                   setThreadName('');
                   setThreadNotes('');
+                  setThreadPinId('');
                 }}
               >
                 <Plus size={13} /> Add
               </button>
             </div>
-            <input
-              className="ink-input"
-              placeholder="Notes / rumor / motive..."
-              value={threadNotes}
-              onChange={(e) => setThreadNotes(e.target.value)}
-            />
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              <input
+                className="ink-input"
+                style={{ flex: 1, minWidth: '140px' }}
+                placeholder="Notes / rumor / motive..."
+                value={threadNotes}
+                onChange={(e) => setThreadNotes(e.target.value)}
+              />
+              <select
+                className="ink-select"
+                style={{ maxWidth: '140px', fontSize: '0.82rem' }}
+                value={threadMapId}
+                onChange={(e) => {
+                  setThreadMapId(e.target.value);
+                  setThreadPinId('');
+                }}
+              >
+                <option value="">No map link</option>
+                {dungeons.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
+              {selectedThreadMap && selectedThreadMap.pins.length > 0 && (
+                <select
+                  className="ink-select"
+                  style={{ maxWidth: '140px', fontSize: '0.82rem' }}
+                  value={threadPinId}
+                  onChange={(e) => setThreadPinId(e.target.value)}
+                >
+                  <option value="">Any pin</option>
+                  {selectedThreadMap.pins.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      Pin #{p.label}{p.title ? `: ${p.title}` : ''}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
           </div>
 
           <div style={{ flex: 1, overflowY: 'auto', padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -466,7 +542,10 @@ export function JournalPanel({
                 No active threads, NPCs, or quests yet.
               </p>
             ) : (
-              threads.map((t) => (
+              threads.map((t) => {
+                const tMap = t.linkedMapId ? dungeons.find((d) => d.id === t.linkedMapId) : null;
+                const tPin = tMap && t.linkedPinId ? tMap.pins.find((p) => p.id === t.linkedPinId) : null;
+                return (
                 <div
                   key={t.id}
                   style={{
@@ -546,8 +625,15 @@ export function JournalPanel({
                       {t.notes}
                     </p>
                   )}
+                  {tMap && (
+                    <span className="mono" style={{ fontSize: '0.72rem', color: 'var(--ink-secondary)' }}>
+                      📍 {tMap.name}
+                      {tPin ? ` · Pin #${tPin.label}${tPin.title ? `: ${tPin.title}` : ''}` : ''}
+                    </span>
+                  )}
                 </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>

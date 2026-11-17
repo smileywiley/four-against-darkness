@@ -8,13 +8,19 @@ import {
   MapPin as MapPinIcon,
   Plus,
   Square,
-  Stamp,
   Trash2,
   Undo2,
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
-import { DoorType, DungeonMap, GridCellType, GridStampType, MapPin } from '../types/campaign';
+import {
+  DoorType,
+  DungeonMap,
+  GridCellType,
+  GridStampType,
+  MapPin,
+  PinIconType,
+} from '../types/campaign';
 import { createBlankDungeon, resizeImageToDataUrl, uid } from '../utils/storage';
 
 interface MapWorkspaceProps {
@@ -35,9 +41,22 @@ type ToolMode =
   | 'secret'
   | 'locked'
   | 'open'
-  | 'stamp'
   | 'pin'
   | 'party';
+
+export const PIN_ICON_OPTIONS: { id: PinIconType; label: string; symbol: string }[] = [
+  { id: 'number', label: 'Numbered Pin', symbol: '#' },
+  { id: 'minion', label: 'Minion', symbol: '⚔' },
+  { id: 'boss', label: 'Boss', symbol: '☠' },
+  { id: 'trap', label: 'Trap', symbol: '▲' },
+  { id: 'treasure', label: 'Treasure', symbol: '✦' },
+  { id: 'stairs_up', label: 'Stairs Up', symbol: '↑' },
+  { id: 'stairs_down', label: 'Stairs Down', symbol: '↓' },
+  { id: 'fountain', label: 'Fountain', symbol: '♒' },
+  { id: 'altar', label: 'Altar', symbol: '☥' },
+  { id: 'quest', label: 'Quest', symbol: '★' },
+  { id: 'npc', label: 'NPC', symbol: '♟' },
+];
 
 const STAMP_OPTIONS: { id: GridStampType; label: string; symbol: string }[] = [
   { id: 'trap', label: 'Trap', symbol: '▲' },
@@ -47,8 +66,12 @@ const STAMP_OPTIONS: { id: GridStampType; label: string; symbol: string }[] = [
   { id: 'treasure', label: 'Treasure', symbol: '✦' },
   { id: 'fountain', label: 'Fountain', symbol: '♒' },
   { id: 'altar', label: 'Altar', symbol: '☥' },
-  { id: 'none', label: 'Clear Stamp', symbol: '×' },
 ];
+
+export function getPinDisplaySymbol(pin: MapPin): string {
+  if (!pin.icon || pin.icon === 'number') return pin.label;
+  return PIN_ICON_OPTIONS.find((o) => o.id === pin.icon)?.symbol ?? pin.label;
+}
 
 export function MapWorkspace({
   dungeons,
@@ -61,7 +84,7 @@ export function MapWorkspace({
 }: MapWorkspaceProps) {
   const activeMap = dungeons.find((d) => d.id === currentDungeonId) ?? dungeons[0];
   const [tool, setTool] = useState<ToolMode>('room');
-  const [activeStamp, setActiveStamp] = useState<GridStampType>('trap');
+  const [activePinIcon, setActivePinIcon] = useState<PinIconType>('number');
   const [zoom, setZoom] = useState<number>(1);
   const [isPainting, setIsPainting] = useState(false);
   const [selectedPinId, setSelectedPinId] = useState<string | null>(null);
@@ -205,19 +228,6 @@ export function MapWorkspace({
       return;
     }
 
-    if (tool === 'stamp') {
-      pushUndo();
-      const key = `${row},${col}`;
-      const nextStamps = { ...activeMap.stamps };
-      if (activeStamp === 'none' || nextStamps[key] === activeStamp) {
-        delete nextStamps[key];
-      } else {
-        nextStamps[key] = activeStamp;
-      }
-      onUpdateDungeon({ ...activeMap, stamps: nextStamps });
-      return;
-    }
-
     if (tool === 'party') {
       onUpdateDungeon({ ...activeMap, partyPos: { x: col, y: row } });
       return;
@@ -235,6 +245,7 @@ export function MapWorkspace({
         label: nextLabel,
         title: `Room ${nextLabel}`,
         notes: '',
+        icon: activePinIcon,
         x: col,
         y: row,
       };
@@ -283,6 +294,7 @@ export function MapWorkspace({
         label: nextLabel,
         title: `Room ${nextLabel}`,
         notes: '',
+        icon: activePinIcon,
         x: xPct,
         y: yPct,
       };
@@ -474,41 +486,34 @@ export function MapWorkspace({
             >
               Entrance
             </button>
-
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-              <button
-                type="button"
-                className={`ink-btn ink-btn-sm ${tool === 'stamp' ? 'ink-btn-active' : ''}`}
-                onClick={() => setTool('stamp')}
-              >
-                <Stamp size={12} /> Stamp:
-              </button>
-              <select
-                className="ink-select"
-                style={{ padding: '2px 4px', fontSize: '0.8rem' }}
-                value={activeStamp}
-                onChange={(e) => {
-                  setActiveStamp(e.target.value as GridStampType);
-                  setTool('stamp');
-                }}
-              >
-                {STAMP_OPTIONS.map((st) => (
-                  <option key={st.id} value={st.id}>
-                    {st.symbol} {st.label}
-                  </option>
-                ))}
-              </select>
-            </div>
           </>
         )}
 
-        <button
-          type="button"
-          className={`ink-btn ink-btn-sm ${tool === 'pin' ? 'ink-btn-active' : ''}`}
-          onClick={() => setTool('pin')}
-        >
-          <MapPinIcon size={12} /> Room Pin
-        </button>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+          <button
+            type="button"
+            className={`ink-btn ink-btn-sm ${tool === 'pin' ? 'ink-btn-active' : ''}`}
+            onClick={() => setTool('pin')}
+          >
+            <MapPinIcon size={12} /> Room Pin
+          </button>
+          <select
+            className="ink-select"
+            style={{ padding: '2px 4px', fontSize: '0.8rem' }}
+            value={activePinIcon}
+            title="Icon for new Room Pins"
+            onChange={(e) => {
+              setActivePinIcon(e.target.value as PinIconType);
+              setTool('pin');
+            }}
+          >
+            {PIN_ICON_OPTIONS.map((opt) => (
+              <option key={opt.id} value={opt.id}>
+                {opt.symbol} {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
         <button
           type="button"
           className={`ink-btn ink-btn-sm ${tool === 'party' ? 'ink-btn-active' : ''}`}
@@ -830,6 +835,7 @@ export function MapWorkspace({
               const cx = pin.x * cellSize + cellSize / 2;
               const cy = pin.y * cellSize + cellSize / 2;
               const isSel = pin.id === selectedPinId;
+              const symbol = getPinDisplaySymbol(pin);
               return (
                 <g
                   key={pin.id}
@@ -839,10 +845,11 @@ export function MapWorkspace({
                     setSelectedPinId(pin.id);
                   }}
                 >
+                  <title>{`#${pin.label}${pin.title ? `: ${pin.title}` : ''}${pin.minionType ? ` (${pin.minionType})` : ''}`}</title>
                   <circle
                     cx={cx}
                     cy={cy}
-                    r={Math.max(8, cellSize * 0.36)}
+                    r={Math.max(8, cellSize * 0.38)}
                     fill={isSel ? '#2b1810' : '#7c2d20'}
                     stroke="#fffaf0"
                     strokeWidth={1.5}
@@ -851,11 +858,11 @@ export function MapWorkspace({
                     x={cx}
                     y={cy + 3.5}
                     textAnchor="middle"
-                    fontSize={10}
+                    fontSize={pin.icon && pin.icon !== 'number' ? 11 : 10}
                     fontWeight="700"
                     fill="#fffaf0"
                   >
-                    {pin.label}
+                    {symbol}
                   </text>
                 </g>
               );
@@ -953,9 +960,9 @@ export function MapWorkspace({
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
-                title={pin.title}
+                title={`#${pin.label}${pin.title ? `: ${pin.title}` : ''}${pin.minionType ? ` (${pin.minionType})` : ''}`}
               >
-                {pin.label}
+                {getPinDisplaySymbol(pin)}
               </button>
             ))}
 
@@ -1014,9 +1021,31 @@ export function MapWorkspace({
             >
               Pin #{selectedPin.label}
             </span>
+            <select
+              className="ink-select"
+              style={{ padding: '3px 5px', fontSize: '0.82rem' }}
+              value={selectedPin.icon ?? 'number'}
+              title="Pin icon"
+              onChange={(e) =>
+                onUpdateDungeon({
+                  ...activeMap,
+                  pins: activeMap.pins.map((p) =>
+                    p.id === selectedPin.id
+                      ? { ...p, icon: e.target.value as PinIconType }
+                      : p
+                  ),
+                })
+              }
+            >
+              {PIN_ICON_OPTIONS.map((opt) => (
+                <option key={opt.id} value={opt.id}>
+                  {opt.symbol} {opt.label}
+                </option>
+              ))}
+            </select>
             <input
               className="ink-input"
-              style={{ flex: 1, minWidth: '140px', padding: '3px 6px' }}
+              style={{ flex: 1, minWidth: '130px', padding: '3px 6px' }}
               value={selectedPin.title}
               placeholder="Room title..."
               onChange={(e) =>
@@ -1058,6 +1087,20 @@ export function MapWorkspace({
               Close
             </button>
           </div>
+          <input
+            className="ink-input"
+            style={{ padding: '3px 6px', fontSize: '0.84rem' }}
+            value={selectedPin.minionType ?? ''}
+            placeholder="Minion / Foe type (e.g., 4 Goblins Lvl 3, Vermin, Boss)..."
+            onChange={(e) =>
+              onUpdateDungeon({
+                ...activeMap,
+                pins: activeMap.pins.map((p) =>
+                  p.id === selectedPin.id ? { ...p, minionType: e.target.value } : p
+                ),
+              })
+            }
+          />
           <textarea
             className="ink-textarea"
             rows={2}

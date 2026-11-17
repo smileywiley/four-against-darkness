@@ -77,11 +77,26 @@ export type GridStampType =
 
 export type DoorType = 'door' | 'secret' | 'locked' | 'open';
 
+export type PinIconType =
+  | 'number'
+  | 'minion'
+  | 'boss'
+  | 'trap'
+  | 'treasure'
+  | 'stairs_up'
+  | 'stairs_down'
+  | 'fountain'
+  | 'altar'
+  | 'quest'
+  | 'npc';
+
 export interface MapPin {
   id: string;
   label: string;
   title: string;
   notes: string;
+  icon?: PinIconType;
+  minionType?: string;
   /** Grid column (grid mode) or 0..100 percentage X (image mode) */
   x: number;
   /** Grid row (grid mode) or 0..100 percentage Y (image mode) */
@@ -98,7 +113,7 @@ export interface DungeonMap {
   rows: number;
   /** Key: "row,col" */
   cells: Record<string, GridCellType>;
-  /** Key: "row,col" */
+  /** Legacy stamps (optional, kept for backwards compatibility) */
   stamps: Record<string, GridStampType>;
   /** Key: "h:row:col" (top edge of cell) or "v:row:col" (left edge of cell) */
   edges: Record<string, DoorType>;
@@ -145,6 +160,8 @@ export interface StoryThread {
   name: string;
   status: StoryThreadStatus;
   notes: string;
+  linkedMapId?: string;
+  linkedPinId?: string;
 }
 
 export interface Campaign {
@@ -153,6 +170,7 @@ export interface Campaign {
   createdAt: string;
   updatedAt: string;
   sessionNumber: number;
+  minionsDefeated?: number;
   characters: Character[];
   currentDungeonId: string;
   dungeons: DungeonMap[];

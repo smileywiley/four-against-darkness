@@ -25,9 +25,7 @@ export function createBlankDungeon(name = 'Level 1 — The Sunken Crypt', depth 
       '24,9': 'room',
       '24,10': 'room',
     },
-    stamps: {
-      '26,9': 'stairs_up',
-    },
+    stamps: {},
     edges: {
       'h:26:9': 'door',
       'h:27:9': 'open',
@@ -39,6 +37,7 @@ export function createBlankDungeon(name = 'Level 1 — The Sunken Crypt', depth 
         label: '1',
         title: 'Entrance Hall',
         notes: 'Damp stone steps descend into darkness. Lantern lit.',
+        icon: 'stairs_up',
         x: 9,
         y: 25,
       },
@@ -60,6 +59,7 @@ export function createStarterCampaign(name = 'Expedition of the Crimson Lantern'
     createdAt: now,
     updatedAt: now,
     sessionNumber: 1,
+    minionsDefeated: 0,
     characters: [
       createCharacterFromPreset(uid('char'), 'Aldric', 'warrior', true),
       createCharacterFromPreset(uid('char'), 'Seraphina', 'cleric', false),

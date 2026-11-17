@@ -183,6 +183,77 @@ export function App() {
               }
             />
           </label>
+
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '2px 6px',
+              border: '1px solid var(--ink-crimson-soft)',
+              borderRadius: '4px',
+              background:
+                (activeCampaign.minionsDefeated ?? 0) >= 10
+                  ? 'rgba(124, 45, 32, 0.14)'
+                  : 'rgba(255, 250, 238, 0.6)',
+              fontSize: '0.82rem',
+            }}
+            title="Every 10 minion encounters grants an XP roll"
+          >
+            <span>Minions:</span>
+            <button
+              type="button"
+              className="ink-btn ink-btn-sm"
+              style={{ padding: '0 5px', lineHeight: 1.2 }}
+              onClick={() =>
+                updateActiveCampaign((c) => ({
+                  ...c,
+                  minionsDefeated: Math.max(0, (c.minionsDefeated ?? 0) - 1),
+                }))
+              }
+            >
+              -
+            </button>
+            <strong
+              className="mono"
+              style={{
+                minWidth: '34px',
+                textAlign: 'center',
+                color: (activeCampaign.minionsDefeated ?? 0) >= 10 ? 'var(--ink-crimson)' : 'inherit',
+              }}
+            >
+              {activeCampaign.minionsDefeated ?? 0}/10
+            </strong>
+            <button
+              type="button"
+              className="ink-btn ink-btn-sm"
+              style={{ padding: '0 5px', lineHeight: 1.2 }}
+              onClick={() =>
+                updateActiveCampaign((c) => ({
+                  ...c,
+                  minionsDefeated: (c.minionsDefeated ?? 0) + 1,
+                }))
+              }
+            >
+              +
+            </button>
+            {(activeCampaign.minionsDefeated ?? 0) >= 10 && (
+              <button
+                type="button"
+                className="ink-btn ink-btn-primary ink-btn-sm"
+                style={{ padding: '1px 5px', fontSize: '0.74rem' }}
+                title="Roll for XP and subtract 10"
+                onClick={() =>
+                  updateActiveCampaign((c) => ({
+                    ...c,
+                    minionsDefeated: Math.max(0, (c.minionsDefeated ?? 0) - 10),
+                  }))
+                }
+              >
+                XP Roll (-10)
+              </button>
+            )}
+          </div>
         </div>
 
         {/* View Mode Switcher & Tools */}
