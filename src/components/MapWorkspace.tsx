@@ -791,6 +791,15 @@ export function MapWorkspace({
 
               return (
                 <g key={edgeKey} style={{ pointerEvents: 'none' }}>
+                  <line
+                    x1={c * cellSize}
+                    y1={r * cellSize}
+                    x2={dir === 'h' ? (c + 1) * cellSize : c * cellSize}
+                    y2={dir === 'h' ? r * cellSize : (r + 1) * cellSize}
+                    stroke="#6b2217"
+                    strokeWidth={2.5}
+                    strokeLinecap="square"
+                  />
                   <rect
                     x={cx - w / 2}
                     y={cy - h / 2}
