@@ -102,6 +102,49 @@ export function MapWorkspace({
     });
   };
 
+  const expandGrid = (dir: 'top' | 'bottom' | 'left' | 'right') => {
+    if (activeMap.mode !== 'grid') return;
+    const dRow = dir === 'top' ? 2 : 0;
+    const dCol = dir === 'left' ? 2 : 0;
+
+    const shiftCellRecord = <T,>(rec: Record<string, T>): Record<string, T> => {
+      if (dRow === 0 && dCol === 0) return rec;
+      const next: Record<string, T> = {};
+      for (const [key, val] of Object.entries(rec)) {
+        const [rStr, cStr] = key.split(',');
+        next[`${Number(rStr) + dRow},${Number(cStr) + dCol}`] = val;
+      }
+      return next;
+    };
+
+    const shiftEdges = (rec: Record<string, DoorType>): Record<string, DoorType> => {
+      if (dRow === 0 && dCol === 0) return rec;
+      const next: Record<string, DoorType> = {};
+      for (const [key, val] of Object.entries(rec)) {
+        const [edgeDir, rStr, cStr] = key.split(':');
+        next[`${edgeDir}:${Number(rStr) + dRow}:${Number(cStr) + dCol}`] = val;
+      }
+      return next;
+    };
+
+    onUpdateDungeon({
+      ...activeMap,
+      rows: activeMap.rows + (dir === 'top' || dir === 'bottom' ? 2 : 0),
+      cols: activeMap.cols + (dir === 'left' || dir === 'right' ? 2 : 0),
+      cells: shiftCellRecord(activeMap.cells),
+      stamps: shiftCellRecord(activeMap.stamps),
+      edges: shiftEdges(activeMap.edges),
+      pins:
+        dRow === 0 && dCol === 0
+          ? activeMap.pins
+          : activeMap.pins.map((p) => ({ ...p, x: p.x + dCol, y: p.y + dRow })),
+      partyPos:
+        activeMap.partyPos && (dRow !== 0 || dCol !== 0)
+          ? { x: activeMap.partyPos.x + dCol, y: activeMap.partyPos.y + dRow }
+          : activeMap.partyPos,
+    });
+  };
+
   const cellSize = Math.round(24 * zoom);
   const svgW = activeMap.cols * cellSize;
   const svgH = activeMap.rows * cellSize;
@@ -522,10 +565,29 @@ export function MapWorkspace({
         onMouseLeave={() => setIsPainting(false)}
       >
         {activeMap.mode === 'grid' ? (
-          <svg
-            width={svgW}
-            height={svgH}
-            viewBox={`0 0 ${svgW} ${svgH}`}
+          <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+            <button
+              type="button"
+              className="ink-btn ink-btn-sm"
+              onClick={() => expandGrid('top')}
+              title="Add 2 rows to the top of this floor"
+            >
+              +2 Rows
+            </button>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <button
+                type="button"
+                className="ink-btn ink-btn-sm"
+                onClick={() => expandGrid('left')}
+                title="Add 2 columns to the left of this floor"
+                style={{ padding: '8px 4px', writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
+              >
+                +2 Cols
+              </button>
+              <svg
+                width={svgW}
+                height={svgH}
+                viewBox={`0 0 ${svgW} ${svgH}`}
             style={{
               background: '#f7ebd0',
               border: '2px solid var(--ink-crimson)',
@@ -813,7 +875,26 @@ export function MapWorkspace({
                 </text>
               </g>
             )}
-          </svg>
+              </svg>
+              <button
+                type="button"
+                className="ink-btn ink-btn-sm"
+                onClick={() => expandGrid('right')}
+                title="Add 2 columns to the right of this floor"
+                style={{ padding: '8px 4px', writingMode: 'vertical-rl' }}
+              >
+                +2 Cols
+              </button>
+            </div>
+            <button
+              type="button"
+              className="ink-btn ink-btn-sm"
+              onClick={() => expandGrid('bottom')}
+              title="Add 2 rows to the bottom of this floor"
+            >
+              +2 Rows
+            </button>
+          </div>
         ) : (
           /* Paper Map Image Overlay Mode */
           <div
