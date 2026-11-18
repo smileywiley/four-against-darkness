@@ -1,9 +1,8 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
   CheckSquare,
   Compass,
   Eraser,
-  ImagePlus,
   Plus,
   Trash2,
   Undo2,
@@ -18,7 +17,7 @@ import {
   MapPin,
   PinIconType,
 } from '../types/campaign';
-import { createBlankDungeon, resizeImageToDataUrl, uid } from '../utils/storage';
+import { createBlankDungeon, uid } from '../utils/storage';
 
 interface MapWorkspaceProps {
   dungeons: DungeonMap[];
@@ -96,8 +95,6 @@ export function MapWorkspace({
       stamps: Record<string, GridStampType>;
     }>
   >([]);
-
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   if (!activeMap) return null;
 
@@ -281,55 +278,6 @@ export function MapWorkspace({
     }
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const dataUrl = await resizeImageToDataUrl(file, 1400);
-      const newMap: DungeonMap = {
-        ...createBlankDungeon(file.name.replace(/\.[^.]+$/, ''), dungeons.length + 1),
-        mode: 'image',
-        cells: {},
-        stamps: {},
-        edges: {},
-        pins: [],
-        partyPos: null,
-        imageDataUrl: dataUrl,
-      };
-      onAddDungeon(newMap);
-      setSelectedPinId(null);
-      setTool('pin');
-    } catch (err) {
-      console.error(err);
-    } finally {
-      e.target.value = '';
-    }
-  };
-
-  const handleImageClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (tool !== 'pin' && tool !== 'party') return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const xPct = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
-    const yPct = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
-
-    if (tool === 'party') {
-      onUpdateDungeon({ ...activeMap, partyPos: { x: xPct, y: yPct } });
-    } else if (tool === 'pin') {
-      const nextLabel = String(activeMap.pins.length + 1);
-      const newPin: MapPin = {
-        id: uid('pin'),
-        label: nextLabel,
-        title: `Room ${nextLabel}`,
-        notes: '',
-        icon: activePinIcon,
-        x: xPct,
-        y: yPct,
-      };
-      onUpdateDungeon({ ...activeMap, pins: [...activeMap.pins, newPin] });
-      setSelectedPinId(newPin.id);
-    }
-  };
-
   // Helper for auto-wall rendering in grid mode
   const isFilled = (r: number, c: number) => {
     const val = activeMap.cells[`${r},${c}`];
@@ -411,24 +359,8 @@ export function MapWorkspace({
               setUndoStack([]);
             }}
           >
-            <Plus size={13} /> Grid Map
+            <Plus size={13} /> New Floor
           </button>
-
-          <button
-            type="button"
-            className="ink-btn ink-btn-sm"
-            onClick={() => fileInputRef.current?.click()}
-            title="Upload photo/scan of paper map"
-          >
-            <ImagePlus size={13} /> Paper Map
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            style={{ display: 'none' }}
-            onChange={handleImageUpload}
-          />
 
           {dungeons.length > 1 && (
             <button
@@ -458,61 +390,57 @@ export function MapWorkspace({
           background: 'rgba(250, 241, 220, 0.7)',
         }}
       >
-        {activeMap.mode === 'grid' && (
-          <>
-            <select
-              className={`ink-select-tool ${
-                tool === 'room' || tool === 'corridor' || tool === 'water' || tool === 'hatch'
-                  ? 'ink-select-tool-active'
-                  : ''
-              }`}
-              value={lastDrawTool}
-              title="Paint Rooms, Corridors, Water, or Hatch marks"
-              onMouseDown={() => setTool(lastDrawTool)}
-              onFocus={() => setTool(lastDrawTool)}
-              onChange={(e) => {
-                const next = e.target.value as 'room' | 'corridor' | 'water' | 'hatch';
-                setLastDrawTool(next);
-                setTool(next);
-              }}
-            >
-              <option value="room">Draw: Room</option>
-              <option value="corridor">Draw: Corridor</option>
-              <option value="water">Draw: Water</option>
-              <option value="hatch">Draw: Hatch</option>
-            </select>
+        <select
+          className={`ink-select-tool ${
+            tool === 'room' || tool === 'corridor' || tool === 'water' || tool === 'hatch'
+              ? 'ink-select-tool-active'
+              : ''
+          }`}
+          value={lastDrawTool}
+          title="Paint Rooms, Corridors, Water, or Hatch marks"
+          onMouseDown={() => setTool(lastDrawTool)}
+          onFocus={() => setTool(lastDrawTool)}
+          onChange={(e) => {
+            const next = e.target.value as 'room' | 'corridor' | 'water' | 'hatch';
+            setLastDrawTool(next);
+            setTool(next);
+          }}
+        >
+          <option value="room">Draw: Room</option>
+          <option value="corridor">Draw: Corridor</option>
+          <option value="water">Draw: Water</option>
+          <option value="hatch">Draw: Hatch</option>
+        </select>
 
-            <button
-              type="button"
-              className={`ink-btn ink-btn-sm ${tool === 'erase' ? 'ink-btn-active' : ''}`}
-              onClick={() => setTool('erase')}
-            >
-              <Eraser size={12} /> Erase
-            </button>
+        <button
+          type="button"
+          className={`ink-btn ink-btn-sm ${tool === 'erase' ? 'ink-btn-active' : ''}`}
+          onClick={() => setTool('erase')}
+        >
+          <Eraser size={12} /> Erase
+        </button>
 
-            <select
-              className={`ink-select-tool ${
-                tool === 'door' || tool === 'secret' || tool === 'locked' || tool === 'open'
-                  ? 'ink-select-tool-active'
-                  : ''
-              }`}
-              value={lastEdgeTool}
-              title="Click a cell edge to place a Door, Secret Door, Locked Door, or open Entrance"
-              onMouseDown={() => setTool(lastEdgeTool)}
-              onFocus={() => setTool(lastEdgeTool)}
-              onChange={(e) => {
-                const next = e.target.value as 'door' | 'secret' | 'locked' | 'open';
-                setLastEdgeTool(next);
-                setTool(next);
-              }}
-            >
-              <option value="door">Wall: Door</option>
-              <option value="secret">Wall: Secret</option>
-              <option value="locked">Wall: Locked</option>
-              <option value="open">Wall: Entrance</option>
-            </select>
-          </>
-        )}
+        <select
+          className={`ink-select-tool ${
+            tool === 'door' || tool === 'secret' || tool === 'locked' || tool === 'open'
+              ? 'ink-select-tool-active'
+              : ''
+          }`}
+          value={lastEdgeTool}
+          title="Click a cell edge to place a Door, Secret Door, Locked Door, or open Entrance"
+          onMouseDown={() => setTool(lastEdgeTool)}
+          onFocus={() => setTool(lastEdgeTool)}
+          onChange={(e) => {
+            const next = e.target.value as 'door' | 'secret' | 'locked' | 'open';
+            setLastEdgeTool(next);
+            setTool(next);
+          }}
+        >
+          <option value="door">Wall: Door</option>
+          <option value="secret">Wall: Secret</option>
+          <option value="locked">Wall: Locked</option>
+          <option value="open">Wall: Entrance</option>
+        </select>
 
         <select
           className={`ink-select-tool ${tool === 'pin' ? 'ink-select-tool-active' : ''}`}
@@ -541,17 +469,15 @@ export function MapWorkspace({
         </button>
 
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '4px' }}>
-          {activeMap.mode === 'grid' && (
-            <button
-              type="button"
-              className="ink-btn ink-btn-sm"
-              disabled={undoStack.length === 0}
-              onClick={handleUndo}
-              title="Undo last grid edit"
-            >
-              <Undo2 size={12} />
-            </button>
-          )}
+          <button
+            type="button"
+            className="ink-btn ink-btn-sm"
+            disabled={undoStack.length === 0}
+            onClick={handleUndo}
+            title="Undo last grid edit"
+          >
+            <Undo2 size={12} />
+          </button>
           <button
             type="button"
             className="ink-btn ink-btn-sm"
@@ -587,8 +513,7 @@ export function MapWorkspace({
         onMouseUp={() => setIsPainting(false)}
         onMouseLeave={() => setIsPainting(false)}
       >
-        {activeMap.mode === 'grid' ? (
-          <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+        <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
             <button
               type="button"
               className="ink-btn ink-btn-sm"
@@ -968,88 +893,6 @@ export function MapWorkspace({
               +2 Rows
             </button>
           </div>
-        ) : (
-          /* Paper Map Image Overlay Mode */
-          <div
-            onClick={handleImageClick}
-            style={{
-              position: 'relative',
-              display: 'inline-block',
-              border: '2px solid var(--ink-crimson)',
-              boxShadow: '0 3px 10px rgba(45, 24, 16, 0.16)',
-              cursor: tool === 'pin' || tool === 'party' ? 'crosshair' : 'default',
-              width: `${Math.round(520 * zoom)}px`,
-              maxWidth: 'none',
-            }}
-          >
-            {activeMap.imageDataUrl && (
-              <img
-                src={activeMap.imageDataUrl}
-                alt={activeMap.name}
-                style={{ width: '100%', display: 'block', userSelect: 'none' }}
-                draggable={false}
-              />
-            )}
-
-            {activeMap.pins.map((pin) => (
-              <button
-                key={pin.id}
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedPinId(pin.id);
-                }}
-                style={{
-                  position: 'absolute',
-                  left: `${pin.x}%`,
-                  top: `${pin.y}%`,
-                  transform: 'translate(-50%, -50%)',
-                  width: '24px',
-                  height: '24px',
-                  borderRadius: '50%',
-                  background: pin.id === selectedPinId ? '#2b1810' : 'var(--ink-crimson)',
-                  color: '#fffaf0',
-                  border: '2px solid #fffaf0',
-                  fontWeight: 700,
-                  fontSize: '0.75rem',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-                title={`#${pin.label}${pin.title ? `: ${pin.title}` : ''}${pin.minionType ? ` (${pin.minionType})` : ''}`}
-              >
-                {getPinDisplaySymbol(pin)}
-              </button>
-            ))}
-
-            {activeMap.partyPos && (
-              <div
-                style={{
-                  position: 'absolute',
-                  left: `${activeMap.partyPos.x}%`,
-                  top: `${activeMap.partyPos.y}%`,
-                  transform: 'translate(-50%, -50%)',
-                  width: '24px',
-                  height: '24px',
-                  borderRadius: '50%',
-                  background: 'var(--ink-amber)',
-                  color: '#fffaf0',
-                  border: '2px solid #fffaf0',
-                  fontWeight: 700,
-                  fontSize: '0.78rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  pointerEvents: 'none',
-                }}
-                title="Party Location"
-              >
-                P
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Selected Room Pin Inspector Footer */}
