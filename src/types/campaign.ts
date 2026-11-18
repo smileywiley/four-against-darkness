@@ -63,7 +63,7 @@ export interface Character {
   notes: string;
 }
 
-export type GridCellType = 'empty' | 'room' | 'corridor';
+export type GridCellType = 'empty' | 'room' | 'corridor' | 'water' | 'hatch';
 
 export type GridStampType =
   | 'none'

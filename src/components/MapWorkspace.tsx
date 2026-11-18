@@ -33,6 +33,8 @@ interface MapWorkspaceProps {
 type ToolMode =
   | 'room'
   | 'corridor'
+  | 'water'
+  | 'hatch'
   | 'erase'
   | 'door'
   | 'secret'
@@ -81,7 +83,7 @@ export function MapWorkspace({
 }: MapWorkspaceProps) {
   const activeMap = dungeons.find((d) => d.id === currentDungeonId) ?? dungeons[0];
   const [tool, setTool] = useState<ToolMode>('room');
-  const [lastDrawTool, setLastDrawTool] = useState<'room' | 'corridor'>('room');
+  const [lastDrawTool, setLastDrawTool] = useState<'room' | 'corridor' | 'water' | 'hatch'>('room');
   const [lastEdgeTool, setLastEdgeTool] = useState<'door' | 'secret' | 'locked' | 'open'>('door');
   const [activePinIcon, setActivePinIcon] = useState<PinIconType>('number');
   const [zoom, setZoom] = useState<number>(1);
@@ -173,7 +175,7 @@ export function MapWorkspace({
 
   const paintCell = (row: number, col: number, mode: ToolMode) => {
     const key = `${row},${col}`;
-    if (mode === 'room' || mode === 'corridor') {
+    if (mode === 'room' || mode === 'corridor' || mode === 'water' || mode === 'hatch') {
       if (activeMap.cells[key] === mode) return;
       onUpdateDungeon({
         ...activeMap,
@@ -305,7 +307,7 @@ export function MapWorkspace({
   // Helper for auto-wall rendering in grid mode
   const isFilled = (r: number, c: number) => {
     const val = activeMap.cells[`${r},${c}`];
-    return val === 'room' || val === 'corridor';
+    return val === 'room' || val === 'corridor' || val === 'water';
   };
 
   return (
@@ -433,19 +435,25 @@ export function MapWorkspace({
         {activeMap.mode === 'grid' && (
           <>
             <select
-              className={`ink-select-tool ${tool === 'room' || tool === 'corridor' ? 'ink-select-tool-active' : ''}`}
+              className={`ink-select-tool ${
+                tool === 'room' || tool === 'corridor' || tool === 'water' || tool === 'hatch'
+                  ? 'ink-select-tool-active'
+                  : ''
+              }`}
               value={lastDrawTool}
-              title="Paint Rooms or Corridors"
+              title="Paint Rooms, Corridors, Water, or Hatch marks"
               onMouseDown={() => setTool(lastDrawTool)}
               onFocus={() => setTool(lastDrawTool)}
               onChange={(e) => {
-                const next = e.target.value as 'room' | 'corridor';
+                const next = e.target.value as 'room' | 'corridor' | 'water' | 'hatch';
                 setLastDrawTool(next);
                 setTool(next);
               }}
             >
               <option value="room">Draw: Room</option>
               <option value="corridor">Draw: Corridor</option>
+              <option value="water">Draw: Water</option>
+              <option value="hatch">Draw: Hatch</option>
             </select>
 
             <button
@@ -583,7 +591,11 @@ export function MapWorkspace({
               boxShadow: '0 3px 10px rgba(45, 24, 16, 0.16)',
               userSelect: 'none',
               cursor:
-                tool === 'room' || tool === 'corridor' || tool === 'erase'
+                tool === 'room' ||
+                tool === 'corridor' ||
+                tool === 'water' ||
+                tool === 'hatch' ||
+                tool === 'erase'
                   ? 'crosshair'
                   : 'pointer',
               flexShrink: 0,
@@ -622,19 +634,25 @@ export function MapWorkspace({
                 const stamp = activeMap.stamps[key];
                 const x = c * cellSize;
                 const y = r * cellSize;
+                const isPaintTool =
+                  tool === 'room' ||
+                  tool === 'corridor' ||
+                  tool === 'water' ||
+                  tool === 'hatch' ||
+                  tool === 'erase';
 
                 return (
                   <g
                     key={key}
                     onMouseDown={() => {
-                      if (tool === 'room' || tool === 'corridor' || tool === 'erase') {
+                      if (isPaintTool) {
                         pushUndo();
                         setIsPainting(true);
                         paintCell(r, c, tool);
                       }
                     }}
                     onMouseEnter={() => {
-                      if (isPainting && (tool === 'room' || tool === 'corridor' || tool === 'erase')) {
+                      if (isPainting && isPaintTool) {
                         paintCell(r, c, tool);
                       }
                     }}
@@ -649,6 +667,8 @@ export function MapWorkspace({
                           ? '#fffaf0'
                           : type === 'corridor'
                           ? 'rgba(216, 188, 132, 0.55)'
+                          : type === 'water'
+                          ? 'rgba(116, 152, 160, 0.34)'
                           : 'transparent'
                       }
                     />
@@ -661,6 +681,33 @@ export function MapWorkspace({
                         stroke="rgba(124, 45, 32, 0.18)"
                         strokeWidth={1}
                       />
+                    )}
+                    {type === 'water' && (
+                      <g stroke="rgba(62, 100, 110, 0.72)" strokeWidth={1.2} fill="none" style={{ pointerEvents: 'none' }}>
+                        <path
+                          d={`M ${x + cellSize * 0.15} ${y + cellSize * 0.38} Q ${x + cellSize * 0.35} ${y + cellSize * 0.25}, ${x + cellSize * 0.5} ${y + cellSize * 0.38} T ${x + cellSize * 0.85} ${y + cellSize * 0.38}`}
+                        />
+                        <path
+                          d={`M ${x + cellSize * 0.15} ${y + cellSize * 0.68} Q ${x + cellSize * 0.35} ${y + cellSize * 0.55}, ${x + cellSize * 0.5} ${y + cellSize * 0.68} T ${x + cellSize * 0.85} ${y + cellSize * 0.68}`}
+                        />
+                      </g>
+                    )}
+                    {type === 'hatch' && (
+                      <g stroke="rgba(124, 45, 32, 0.42)" strokeWidth={1.1} style={{ pointerEvents: 'none' }}>
+                        {(r + c) % 2 === 0 ? (
+                          <>
+                            <line x1={x + cellSize * 0.18} y1={y + cellSize * 0.15} x2={x + cellSize * 0.18} y2={y + cellSize * 0.85} />
+                            <line x1={x + cellSize * 0.5} y1={y + cellSize * 0.15} x2={x + cellSize * 0.5} y2={y + cellSize * 0.85} />
+                            <line x1={x + cellSize * 0.82} y1={y + cellSize * 0.15} x2={x + cellSize * 0.82} y2={y + cellSize * 0.85} />
+                          </>
+                        ) : (
+                          <>
+                            <line x1={x + cellSize * 0.15} y1={y + cellSize * 0.18} x2={x + cellSize * 0.85} y2={y + cellSize * 0.18} />
+                            <line x1={x + cellSize * 0.15} y1={y + cellSize * 0.5} x2={x + cellSize * 0.85} y2={y + cellSize * 0.5} />
+                            <line x1={x + cellSize * 0.15} y1={y + cellSize * 0.82} x2={x + cellSize * 0.85} y2={y + cellSize * 0.82} />
+                          </>
+                        )}
+                      </g>
                     )}
                     {stamp && stamp !== 'none' && (
                       <text
