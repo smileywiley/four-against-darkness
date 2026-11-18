@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { Dices, Sparkles, X } from 'lucide-react';
+import { Dices, X } from 'lucide-react';
 import {
   LIKELIHOOD_LABELS,
   OracleLikelihood,
   rollSoloOracle,
-  rollSparkPair,
 } from '../data/soloOracle';
 import { JournalEntry } from '../types/campaign';
 import { uid } from '../utils/storage';
@@ -42,9 +41,6 @@ export function OracleDrawer({
     roll: number;
     answer: string;
   } | null>(null);
-
-  // Spark state
-  const [spark, setSpark] = useState<{ verb: string; noun: string; twist: string } | null>(null);
 
   if (!open) return null;
 
@@ -289,68 +285,6 @@ export function OracleDrawer({
           )}
         </div>
 
-        {/* Verb / Noun & Twist Spark Table */}
-        <div
-          style={{
-            border: '1px solid var(--ink-crimson-soft)',
-            borderRadius: '4px',
-            padding: '10px',
-            background: 'rgba(255,250,238,0.55)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '8px',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <strong style={{ color: 'var(--ink-crimson)' }}>Inspiration & Twist Sparks</strong>
-            <button
-              type="button"
-              className="ink-btn ink-btn-sm"
-              onClick={() => setSpark(rollSparkPair())}
-            >
-              <Sparkles size={13} /> Roll Spark
-            </button>
-          </div>
-
-          {spark && (
-            <div
-              style={{
-                background: 'var(--paper-recessed)',
-                border: '1px solid var(--ink-crimson)',
-                borderRadius: '4px',
-                padding: '8px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '5px',
-              }}
-            >
-              <div className="mono" style={{ fontWeight: 700, color: 'var(--ink-crimson)' }}>
-                {spark.verb} + {spark.noun}
-              </div>
-              <div style={{ fontSize: '0.85rem' }}>
-                <strong>Twist:</strong> {spark.twist}
-              </div>
-              <button
-                type="button"
-                className="ink-btn ink-btn-sm"
-                onClick={() =>
-                  onLogToJournal({
-                    id: uid('log'),
-                    createdAt: new Date().toISOString(),
-                    sessionNumber,
-                    entryType: 'narrative',
-                    title: `Spark: ${spark.verb} ${spark.noun}`,
-                    content: `Twist prompt: ${spark.twist}`,
-                    linkedMapId: currentDungeonId,
-                    threadIds: [],
-                  })
-                }
-              >
-                Log Spark to Journal
-              </button>
-            </div>
-          )}
-        </div>
       </div>
     </aside>
   );
