@@ -124,7 +124,7 @@ export function App() {
       <header className="top-bar">
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           <h1 style={{ fontSize: '1.25rem', letterSpacing: '0.02em' }}>
-            Four Against Darkness
+            Four Against Darkness Ledger
           </h1>
 
           <select
