@@ -2,12 +2,9 @@ import React, { useRef, useState } from 'react';
 import {
   CheckSquare,
   Compass,
-  DoorOpen,
   Eraser,
   ImagePlus,
-  MapPin as MapPinIcon,
   Plus,
-  Square,
   Trash2,
   Undo2,
   ZoomIn,
@@ -84,6 +81,8 @@ export function MapWorkspace({
 }: MapWorkspaceProps) {
   const activeMap = dungeons.find((d) => d.id === currentDungeonId) ?? dungeons[0];
   const [tool, setTool] = useState<ToolMode>('room');
+  const [lastDrawTool, setLastDrawTool] = useState<'room' | 'corridor'>('room');
+  const [lastEdgeTool, setLastEdgeTool] = useState<'door' | 'secret' | 'locked' | 'open'>('door');
   const [activePinIcon, setActivePinIcon] = useState<PinIconType>('number');
   const [zoom, setZoom] = useState<number>(1);
   const [isPainting, setIsPainting] = useState(false);
@@ -433,20 +432,22 @@ export function MapWorkspace({
       >
         {activeMap.mode === 'grid' && (
           <>
-            <button
-              type="button"
-              className={`ink-btn ink-btn-sm ${tool === 'room' ? 'ink-btn-active' : ''}`}
-              onClick={() => setTool('room')}
+            <select
+              className={`ink-select-tool ${tool === 'room' || tool === 'corridor' ? 'ink-select-tool-active' : ''}`}
+              value={lastDrawTool}
+              title="Paint Rooms or Corridors"
+              onMouseDown={() => setTool(lastDrawTool)}
+              onFocus={() => setTool(lastDrawTool)}
+              onChange={(e) => {
+                const next = e.target.value as 'room' | 'corridor';
+                setLastDrawTool(next);
+                setTool(next);
+              }}
             >
-              <Square size={12} /> Room
-            </button>
-            <button
-              type="button"
-              className={`ink-btn ink-btn-sm ${tool === 'corridor' ? 'ink-btn-active' : ''}`}
-              onClick={() => setTool('corridor')}
-            >
-              Corridor
-            </button>
+              <option value="room">Draw: Room</option>
+              <option value="corridor">Draw: Corridor</option>
+            </select>
+
             <button
               type="button"
               className={`ink-btn ink-btn-sm ${tool === 'erase' ? 'ink-btn-active' : ''}`}
@@ -454,66 +455,49 @@ export function MapWorkspace({
             >
               <Eraser size={12} /> Erase
             </button>
-            <button
-              type="button"
-              className={`ink-btn ink-btn-sm ${tool === 'door' ? 'ink-btn-active' : ''}`}
-              onClick={() => setTool('door')}
-              title="Click cell edge to place/remove Door"
+
+            <select
+              className={`ink-select-tool ${
+                tool === 'door' || tool === 'secret' || tool === 'locked' || tool === 'open'
+                  ? 'ink-select-tool-active'
+                  : ''
+              }`}
+              value={lastEdgeTool}
+              title="Click a cell edge to place a Door, Secret Door, Locked Door, or open Entrance"
+              onMouseDown={() => setTool(lastEdgeTool)}
+              onFocus={() => setTool(lastEdgeTool)}
+              onChange={(e) => {
+                const next = e.target.value as 'door' | 'secret' | 'locked' | 'open';
+                setLastEdgeTool(next);
+                setTool(next);
+              }}
             >
-              <DoorOpen size={12} /> Door
-            </button>
-            <button
-              type="button"
-              className={`ink-btn ink-btn-sm ${tool === 'secret' ? 'ink-btn-active' : ''}`}
-              onClick={() => setTool('secret')}
-              title="Click cell edge to place Secret Door"
-            >
-              Secret
-            </button>
-            <button
-              type="button"
-              className={`ink-btn ink-btn-sm ${tool === 'locked' ? 'ink-btn-active' : ''}`}
-              onClick={() => setTool('locked')}
-              title="Click cell edge to place Locked Door"
-            >
-              Locked
-            </button>
-            <button
-              type="button"
-              className={`ink-btn ink-btn-sm ${tool === 'open' ? 'ink-btn-active' : ''}`}
-              onClick={() => setTool('open')}
-              title="Click a wall edge to erase/open it (e.g. dungeon entrance)"
-            >
-              Entrance
-            </button>
+              <option value="door">Wall: Door</option>
+              <option value="secret">Wall: Secret</option>
+              <option value="locked">Wall: Locked</option>
+              <option value="open">Wall: Entrance</option>
+            </select>
           </>
         )}
 
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-          <button
-            type="button"
-            className={`ink-btn ink-btn-sm ${tool === 'pin' ? 'ink-btn-active' : ''}`}
-            onClick={() => setTool('pin')}
-          >
-            <MapPinIcon size={12} /> Room Pin
-          </button>
-          <select
-            className="ink-select"
-            style={{ padding: '2px 4px', fontSize: '0.8rem' }}
-            value={activePinIcon}
-            title="Icon for new Room Pins"
-            onChange={(e) => {
-              setActivePinIcon(e.target.value as PinIconType);
-              setTool('pin');
-            }}
-          >
-            {PIN_ICON_OPTIONS.map((opt) => (
-              <option key={opt.id} value={opt.id}>
-                {opt.symbol} {opt.label}
-              </option>
-            ))}
-          </select>
-        </div>
+        <select
+          className={`ink-select-tool ${tool === 'pin' ? 'ink-select-tool-active' : ''}`}
+          value={activePinIcon}
+          title="Place Room Pin with selected icon"
+          onMouseDown={() => setTool('pin')}
+          onFocus={() => setTool('pin')}
+          onChange={(e) => {
+            setActivePinIcon(e.target.value as PinIconType);
+            setTool('pin');
+          }}
+        >
+          {PIN_ICON_OPTIONS.map((opt) => (
+            <option key={opt.id} value={opt.id}>
+              Pin: {opt.symbol} {opt.label}
+            </option>
+          ))}
+        </select>
+
         <button
           type="button"
           className={`ink-btn ink-btn-sm ${tool === 'party' ? 'ink-btn-active' : ''}`}

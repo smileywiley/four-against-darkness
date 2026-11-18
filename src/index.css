@@ -191,6 +191,29 @@ textarea {
   color: var(--paper-elevated);
 }
 
+.ink-select-tool {
+  background: var(--paper-elevated);
+  border: 1.5px solid var(--ink-crimson);
+  color: var(--ink-crimson);
+  border-radius: var(--radius-sm);
+  padding: 3px 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.14s, color 0.14s;
+}
+
+.ink-select-tool:hover,
+.ink-select-tool-active {
+  background: var(--ink-crimson);
+  color: var(--paper-elevated);
+}
+
+.ink-select-tool option {
+  background: var(--paper-elevated);
+  color: var(--ink-primary);
+}
+
 /* App Shell Layout */
 .app-shell {
   display: flex;
