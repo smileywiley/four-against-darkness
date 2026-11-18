@@ -173,13 +173,38 @@ export function MapWorkspace({
   const svgW = activeMap.cols * cellSize;
   const svgH = activeMap.rows * cellSize;
 
+  const isFilledType = (val?: GridCellType) =>
+    val === 'room' || val === 'corridor' || val === 'water';
+
+  const pruneOrphanedEdges = (
+    cells: Record<string, GridCellType>,
+    edges: Record<string, DoorType>
+  ): Record<string, DoorType> => {
+    const next: Record<string, DoorType> = {};
+    for (const [edgeKey, doorType] of Object.entries(edges)) {
+      const [dir, rStr, cStr] = edgeKey.split(':');
+      const r = Number(rStr);
+      const c = Number(cStr);
+      const hasAdjacent =
+        dir === 'h'
+          ? isFilledType(cells[`${r - 1},${c}`]) || isFilledType(cells[`${r},${c}`])
+          : isFilledType(cells[`${r},${c - 1}`]) || isFilledType(cells[`${r},${c}`]);
+      if (hasAdjacent) {
+        next[edgeKey] = doorType;
+      }
+    }
+    return next;
+  };
+
   const paintCell = (row: number, col: number, mode: ToolMode) => {
     const key = `${row},${col}`;
     if (mode === 'room' || mode === 'corridor' || mode === 'water' || mode === 'hatch') {
       if (activeMap.cells[key] === mode) return;
+      const nextCells = { ...activeMap.cells, [key]: mode };
       onUpdateDungeon({
         ...activeMap,
-        cells: { ...activeMap.cells, [key]: mode },
+        cells: nextCells,
+        edges: mode === 'hatch' ? pruneOrphanedEdges(nextCells, activeMap.edges) : activeMap.edges,
       });
     } else if (mode === 'erase') {
       if (!activeMap.cells[key] && !activeMap.stamps[key]) return;
@@ -191,6 +216,7 @@ export function MapWorkspace({
         ...activeMap,
         cells: nextCells,
         stamps: nextStamps,
+        edges: pruneOrphanedEdges(nextCells, activeMap.edges),
       });
     }
   };
