@@ -431,90 +431,80 @@ export function CombatPanel({ monsters, onChange }: CombatPanelProps) {
 
                     {/* Current / Max Health or Count + Life Bar */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                      <div
+                      <span
                         style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          gap: '6px',
-                          flexWrap: 'wrap',
+                          fontSize: '0.74rem',
+                          fontWeight: 700,
+                          textTransform: 'uppercase',
+                          color:
+                            isDefeated || isBelowHalf
+                              ? '#b91c1c'
+                              : 'var(--ink-secondary)',
                         }}
                       >
-                        <span
-                          style={{
-                            fontSize: '0.74rem',
-                            fontWeight: 700,
-                            textTransform: 'uppercase',
-                            color:
-                              isDefeated || isBelowHalf
-                                ? '#b91c1c'
-                                : 'var(--ink-secondary)',
-                          }}
-                        >
-                          {meta.isBoss ? 'Health' : 'Count'}
-                          {isDefeated
-                            ? ' · Defeated'
-                            : isBelowHalf
-                              ? meta.isBoss
-                                ? ' · Below Half (Morale / -1 Lvl)'
-                                : ' · Below Half (Morale)'
-                              : ''}
-                        </span>
+                        {meta.isBoss ? 'Health' : 'Count'}
+                        {isDefeated
+                          ? ' · Defeated'
+                          : isBelowHalf
+                            ? meta.isBoss
+                              ? ' · Below Half (Morale / -1 Lvl)'
+                              : ' · Below Half (Morale)'
+                            : ''}
+                      </span>
 
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                          <button
-                            type="button"
-                            className="ink-btn ink-btn-sm"
-                            style={{ padding: '1px 7px' }}
-                            onClick={() => setCurrentVal(currentVal - 1)}
-                          >
-                            -
-                          </button>
-                          <input
-                            type="number"
-                            min={0}
-                            max={maxVal}
-                            aria-label={meta.isBoss ? 'Current Health' : 'Current Count'}
-                            className="ink-input mono"
-                            style={{
-                              width: '48px',
-                              textAlign: 'center',
-                              padding: '1px 4px',
-                              fontWeight: 700,
-                            }}
-                            value={currentVal}
-                            onChange={(e) => setCurrentVal(Number(e.target.value) || 0)}
-                          />
-                          <button
-                            type="button"
-                            className="ink-btn ink-btn-sm"
-                            style={{ padding: '1px 7px' }}
-                            onClick={() => setCurrentVal(currentVal + 1)}
-                          >
-                            +
-                          </button>
-                          <span
-                            className="mono"
-                            style={{ fontSize: '0.82rem', color: 'var(--ink-muted)', margin: '0 2px' }}
-                          >
-                            /
-                          </span>
-                          <input
-                            type="number"
-                            min={1}
-                            aria-label={meta.isBoss ? 'Max Health' : 'Max Count'}
-                            title={meta.isBoss ? 'Max Health' : 'Max Count'}
-                            className="ink-input mono"
-                            style={{
-                              width: '48px',
-                              textAlign: 'center',
-                              padding: '1px 4px',
-                              fontWeight: 700,
-                            }}
-                            value={maxVal}
-                            onChange={(e) => setMaxVal(Number(e.target.value) || 1)}
-                          />
-                        </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <button
+                          type="button"
+                          className="ink-btn ink-btn-sm"
+                          style={{ padding: '1px 7px' }}
+                          onClick={() => setCurrentVal(currentVal - 1)}
+                        >
+                          -
+                        </button>
+                        <input
+                          type="number"
+                          min={0}
+                          max={maxVal}
+                          aria-label={meta.isBoss ? 'Current Health' : 'Current Count'}
+                          className="ink-input mono"
+                          style={{
+                            width: '48px',
+                            textAlign: 'center',
+                            padding: '1px 4px',
+                            fontWeight: 700,
+                          }}
+                          value={currentVal}
+                          onChange={(e) => setCurrentVal(Number(e.target.value) || 0)}
+                        />
+                        <button
+                          type="button"
+                          className="ink-btn ink-btn-sm"
+                          style={{ padding: '1px 7px' }}
+                          onClick={() => setCurrentVal(currentVal + 1)}
+                        >
+                          +
+                        </button>
+                        <span
+                          className="mono"
+                          style={{ fontSize: '0.82rem', color: 'var(--ink-muted)', margin: '0 2px' }}
+                        >
+                          /
+                        </span>
+                        <input
+                          type="number"
+                          min={1}
+                          aria-label={meta.isBoss ? 'Max Health' : 'Max Count'}
+                          title={meta.isBoss ? 'Max Health' : 'Max Count'}
+                          className="ink-input mono"
+                          style={{
+                            width: '48px',
+                            textAlign: 'center',
+                            padding: '1px 4px',
+                            fontWeight: 700,
+                          }}
+                          value={maxVal}
+                          onChange={(e) => setMaxVal(Number(e.target.value) || 1)}
+                        />
                       </div>
 
                       {/* Life / Count Bar */}
