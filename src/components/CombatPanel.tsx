@@ -8,8 +8,11 @@ export interface CombatMonster {
   type: CombatMonsterType;
   name: string;
   level: number;
+  attacks: number;
   count: number;
+  maxCount: number;
   health: number;
+  maxHealth: number;
   notes: string;
 }
 
@@ -25,6 +28,7 @@ const MONSTER_TYPE_META: Record<
     placeholder: string;
     isBoss: boolean;
     defaultLevel: number;
+    defaultAttacks: number;
     defaultCount: number;
     defaultHealth: number;
     badgeBg: string;
@@ -36,6 +40,7 @@ const MONSTER_TYPE_META: Record<
     placeholder: 'e.g. Goblins, Orcs, Skeletons...',
     isBoss: false,
     defaultLevel: 3,
+    defaultAttacks: 1,
     defaultCount: 4,
     defaultHealth: 1,
     badgeBg: 'rgba(124, 45, 32, 0.12)',
@@ -46,6 +51,7 @@ const MONSTER_TYPE_META: Record<
     placeholder: 'e.g. Giant Rats, Vampire Bats...',
     isBoss: false,
     defaultLevel: 1,
+    defaultAttacks: 1,
     defaultCount: 6,
     defaultHealth: 1,
     badgeBg: 'rgba(90, 58, 43, 0.14)',
@@ -56,6 +62,7 @@ const MONSTER_TYPE_META: Record<
     placeholder: 'e.g. Ogre, Medusa, Chaos Lord...',
     isBoss: true,
     defaultLevel: 5,
+    defaultAttacks: 2,
     defaultCount: 1,
     defaultHealth: 5,
     badgeBg: 'rgba(148, 86, 12, 0.16)',
@@ -66,6 +73,7 @@ const MONSTER_TYPE_META: Record<
     placeholder: 'e.g. Young Dragon, Vampire Lord...',
     isBoss: true,
     defaultLevel: 6,
+    defaultAttacks: 2,
     defaultCount: 1,
     defaultHealth: 7,
     badgeBg: 'var(--ink-crimson)',
@@ -83,8 +91,11 @@ export function CombatPanel({ monsters, onChange }: CombatPanelProps) {
       type,
       name: '',
       level: meta.defaultLevel,
+      attacks: meta.defaultAttacks,
       count: meta.defaultCount,
+      maxCount: meta.defaultCount,
       health: meta.defaultHealth,
+      maxHealth: meta.defaultHealth,
       notes: '',
     };
     onChange([...monsters, next]);
@@ -181,21 +192,45 @@ export function CombatPanel({ monsters, onChange }: CombatPanelProps) {
               No active foes in combat
             </div>
             <div style={{ fontSize: '0.88rem' }}>
-              Add a Minion, Vermin, Boss, or Final Boss above to track levels, counts, health, and notes.
+              Add a Minion, Vermin, Boss, or Final Boss above to track levels, counts, health, attacks, and notes.
             </div>
           </div>
         ) : (
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
               gap: '12px',
               alignItems: 'start',
             }}
           >
             {monsters.map((monster) => {
               const meta = MONSTER_TYPE_META[monster.type];
-              const isDefeated = meta.isBoss ? monster.health <= 0 : monster.count <= 0;
+              const currentVal = meta.isBoss ? monster.health : monster.count;
+              const maxVal = Math.max(1, meta.isBoss ? monster.maxHealth : monster.maxCount);
+              const pct = Math.max(0, Math.min(100, (currentVal / maxVal) * 100));
+              const isDefeated = currentVal <= 0;
+              const isBelowHalf = !isDefeated && currentVal * 2 < maxVal;
+
+              const setCurrentVal = (nextVal: number) => {
+                const clamped = Math.max(0, Math.min(maxVal, nextVal));
+                if (meta.isBoss) {
+                  updateMonster(monster.id, { health: clamped });
+                } else {
+                  updateMonster(monster.id, { count: clamped });
+                }
+              };
+
+              const setMaxVal = (nextMaxRaw: number) => {
+                const nextMax = Math.max(1, nextMaxRaw);
+                const wasAtMax = currentVal === maxVal;
+                const nextCurrent = wasAtMax ? nextMax : Math.min(currentVal, nextMax);
+                if (meta.isBoss) {
+                  updateMonster(monster.id, { maxHealth: nextMax, health: nextCurrent });
+                } else {
+                  updateMonster(monster.id, { maxCount: nextMax, count: nextCurrent });
+                }
+              };
 
               return (
                 <div
@@ -261,175 +296,250 @@ export function CombatPanel({ monsters, onChange }: CombatPanelProps) {
                     </button>
                   </div>
 
-                  {/* Stats: Level + Count (Minion/Vermin) or Health (Boss/Final Boss) */}
+                  {/* Stats Block */}
                   <div
                     style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
-                      gap: '10px',
-                      padding: '6px 8px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '8px',
+                      padding: '8px 10px',
                       background: 'rgba(231, 209, 163, 0.42)',
                       border: '1px solid var(--ink-crimson-soft)',
                       borderRadius: '4px',
                     }}
                   >
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                      <span
-                        style={{
-                          fontSize: '0.74rem',
-                          fontWeight: 700,
-                          textTransform: 'uppercase',
-                          color: 'var(--ink-secondary)',
-                        }}
-                      >
-                        Level
-                      </span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <button
-                          type="button"
-                          className="ink-btn ink-btn-sm"
-                          style={{ padding: '2px 7px' }}
-                          onClick={() =>
-                            updateMonster(monster.id, { level: Math.max(1, monster.level - 1) })
-                          }
-                        >
-                          -
-                        </button>
-                        <input
-                          type="number"
-                          min={1}
-                          className="ink-input mono"
+                    {/* Level (+ Attacks for Boss / Final Boss) */}
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: meta.isBoss
+                          ? 'minmax(0, 1fr) minmax(0, 1fr)'
+                          : 'minmax(0, 1fr)',
+                        gap: '10px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        <span
                           style={{
-                            width: '100%',
-                            minWidth: 0,
-                            maxWidth: '58px',
-                            textAlign: 'center',
-                            padding: '2px 4px',
+                            fontSize: '0.74rem',
                             fontWeight: 700,
+                            textTransform: 'uppercase',
+                            color: 'var(--ink-secondary)',
                           }}
-                          value={monster.level}
-                          onChange={(e) =>
-                            updateMonster(monster.id, {
-                              level: Math.max(1, Number(e.target.value) || 1),
-                            })
-                          }
-                        />
-                        <button
-                          type="button"
-                          className="ink-btn ink-btn-sm"
-                          style={{ padding: '2px 7px' }}
-                          onClick={() => updateMonster(monster.id, { level: monster.level + 1 })}
                         >
-                          +
-                        </button>
+                          Level
+                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <button
+                            type="button"
+                            className="ink-btn ink-btn-sm"
+                            style={{ padding: '2px 7px' }}
+                            onClick={() =>
+                              updateMonster(monster.id, { level: Math.max(1, monster.level - 1) })
+                            }
+                          >
+                            -
+                          </button>
+                          <input
+                            type="number"
+                            min={1}
+                            className="ink-input mono"
+                            style={{
+                              width: '100%',
+                              minWidth: 0,
+                              maxWidth: '58px',
+                              textAlign: 'center',
+                              padding: '2px 4px',
+                              fontWeight: 700,
+                            }}
+                            value={monster.level}
+                            onChange={(e) =>
+                              updateMonster(monster.id, {
+                                level: Math.max(1, Number(e.target.value) || 1),
+                              })
+                            }
+                          />
+                          <button
+                            type="button"
+                            className="ink-btn ink-btn-sm"
+                            style={{ padding: '2px 7px' }}
+                            onClick={() => updateMonster(monster.id, { level: monster.level + 1 })}
+                          >
+                            +
+                          </button>
+                        </div>
                       </div>
+
+                      {meta.isBoss && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          <span
+                            style={{
+                              fontSize: '0.74rem',
+                              fontWeight: 700,
+                              textTransform: 'uppercase',
+                              color: 'var(--ink-secondary)',
+                            }}
+                          >
+                            Attacks
+                          </span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <button
+                              type="button"
+                              className="ink-btn ink-btn-sm"
+                              style={{ padding: '2px 7px' }}
+                              onClick={() =>
+                                updateMonster(monster.id, {
+                                  attacks: Math.max(1, monster.attacks - 1),
+                                })
+                              }
+                            >
+                              -
+                            </button>
+                            <input
+                              type="number"
+                              min={1}
+                              className="ink-input mono"
+                              style={{
+                                width: '100%',
+                                minWidth: 0,
+                                maxWidth: '58px',
+                                textAlign: 'center',
+                                padding: '2px 4px',
+                                fontWeight: 700,
+                              }}
+                              value={monster.attacks}
+                              onChange={(e) =>
+                                updateMonster(monster.id, {
+                                  attacks: Math.max(1, Number(e.target.value) || 1),
+                                })
+                              }
+                            />
+                            <button
+                              type="button"
+                              className="ink-btn ink-btn-sm"
+                              style={{ padding: '2px 7px' }}
+                              onClick={() =>
+                                updateMonster(monster.id, { attacks: monster.attacks + 1 })
+                              }
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
-                    {meta.isBoss ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    {/* Current / Max Health or Count + Life Bar */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '6px',
+                          flexWrap: 'wrap',
+                        }}
+                      >
                         <span
                           style={{
                             fontSize: '0.74rem',
                             fontWeight: 700,
                             textTransform: 'uppercase',
-                            color: isDefeated ? 'var(--ink-dead)' : 'var(--ink-crimson)',
+                            color:
+                              isDefeated || isBelowHalf
+                                ? '#b91c1c'
+                                : 'var(--ink-secondary)',
                           }}
                         >
-                          Health{isDefeated ? ' (Defeated)' : ''}
+                          {meta.isBoss ? 'Health' : 'Count'}
+                          {isDefeated
+                            ? ' · Defeated'
+                            : isBelowHalf
+                              ? meta.isBoss
+                                ? ' · Below Half (Morale / -1 Lvl)'
+                                : ' · Below Half (Morale)'
+                              : ''}
                         </span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                           <button
                             type="button"
                             className="ink-btn ink-btn-sm"
-                            style={{ padding: '2px 7px' }}
-                            onClick={() =>
-                              updateMonster(monster.id, { health: Math.max(0, monster.health - 1) })
-                            }
+                            style={{ padding: '1px 7px' }}
+                            onClick={() => setCurrentVal(currentVal - 1)}
                           >
                             -
                           </button>
                           <input
                             type="number"
                             min={0}
+                            max={maxVal}
+                            aria-label={meta.isBoss ? 'Current Health' : 'Current Count'}
                             className="ink-input mono"
                             style={{
-                              width: '100%',
-                              minWidth: 0,
-                              maxWidth: '58px',
+                              width: '48px',
                               textAlign: 'center',
-                              padding: '2px 4px',
+                              padding: '1px 4px',
                               fontWeight: 700,
                             }}
-                            value={monster.health}
-                            onChange={(e) =>
-                              updateMonster(monster.id, {
-                                health: Math.max(0, Number(e.target.value) || 0),
-                              })
-                            }
+                            value={currentVal}
+                            onChange={(e) => setCurrentVal(Number(e.target.value) || 0)}
                           />
                           <button
                             type="button"
                             className="ink-btn ink-btn-sm"
-                            style={{ padding: '2px 7px' }}
-                            onClick={() => updateMonster(monster.id, { health: monster.health + 1 })}
+                            style={{ padding: '1px 7px' }}
+                            onClick={() => setCurrentVal(currentVal + 1)}
                           >
                             +
                           </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                        <span
-                          style={{
-                            fontSize: '0.74rem',
-                            fontWeight: 700,
-                            textTransform: 'uppercase',
-                            color: isDefeated ? 'var(--ink-dead)' : 'var(--ink-crimson)',
-                          }}
-                        >
-                          Count{isDefeated ? ' (Defeated)' : ''}
-                        </span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <button
-                            type="button"
-                            className="ink-btn ink-btn-sm"
-                            style={{ padding: '2px 7px' }}
-                            onClick={() =>
-                              updateMonster(monster.id, { count: Math.max(0, monster.count - 1) })
-                            }
+                          <span
+                            className="mono"
+                            style={{ fontSize: '0.82rem', color: 'var(--ink-muted)', margin: '0 2px' }}
                           >
-                            -
-                          </button>
+                            /
+                          </span>
                           <input
                             type="number"
-                            min={0}
+                            min={1}
+                            aria-label={meta.isBoss ? 'Max Health' : 'Max Count'}
+                            title={meta.isBoss ? 'Max Health' : 'Max Count'}
                             className="ink-input mono"
                             style={{
-                              width: '100%',
-                              minWidth: 0,
-                              maxWidth: '58px',
+                              width: '48px',
                               textAlign: 'center',
-                              padding: '2px 4px',
+                              padding: '1px 4px',
                               fontWeight: 700,
                             }}
-                            value={monster.count}
-                            onChange={(e) =>
-                              updateMonster(monster.id, {
-                                count: Math.max(0, Number(e.target.value) || 0),
-                              })
-                            }
+                            value={maxVal}
+                            onChange={(e) => setMaxVal(Number(e.target.value) || 1)}
                           />
-                          <button
-                            type="button"
-                            className="ink-btn ink-btn-sm"
-                            style={{ padding: '2px 7px' }}
-                            onClick={() => updateMonster(monster.id, { count: monster.count + 1 })}
-                          >
-                            +
-                          </button>
                         </div>
                       </div>
-                    )}
+
+                      {/* Life / Count Bar */}
+                      <div
+                        style={{
+                          width: '100%',
+                          height: '9px',
+                          background: 'var(--paper-recessed)',
+                          border: `1px solid ${
+                            isBelowHalf || isDefeated ? '#b91c1c' : 'rgba(124, 45, 32, 0.5)'
+                          }`,
+                          borderRadius: '3px',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: `${pct}%`,
+                            height: '100%',
+                            background: isBelowHalf ? '#c02626' : 'var(--ink-moss)',
+                            transition: 'width 0.15s, background-color 0.15s',
+                          }}
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   {/* Notes textarea */}
