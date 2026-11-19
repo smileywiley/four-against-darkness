@@ -6,10 +6,12 @@ import {
   Download,
   Map as MapIcon,
   Plus,
+  Swords,
   Trash2,
   Users,
 } from 'lucide-react';
 import { ExportModal, NewCampaignModal } from './components/CampaignModals';
+import { CombatMonster, CombatPanel } from './components/CombatPanel';
 import { JournalPanel } from './components/JournalPanel';
 import { MapWorkspace } from './components/MapWorkspace';
 import { OracleDrawer } from './components/OracleDrawer';
@@ -36,6 +38,7 @@ export function App() {
   const [newCampaignOpen, setNewCampaignOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [journalPrefill, setJournalPrefill] = useState<Partial<JournalEntry> | null>(null);
+  const [combatMonsters, setCombatMonsters] = useState<CombatMonster[]>([]);
 
   const activeCampaign = campaigns.find((c) => c.id === activeId) ?? campaigns[0];
 
@@ -287,6 +290,13 @@ export function App() {
             >
               <BookOpen size={13} /> Journal
             </button>
+            <button
+              type="button"
+              className={`ink-btn ink-btn-sm ${viewMode === 'combat' ? 'ink-btn-active' : ''}`}
+              onClick={() => setViewMode('combat')}
+            >
+              <Swords size={13} /> Combat
+            </button>
           </div>
 
           <button
@@ -326,6 +336,13 @@ export function App() {
             characters={activeCampaign.characters}
             selectedCharId={selectedCharId}
             onUpdateChar={handleUpdateChar}
+          />
+        )}
+
+        {viewMode === 'combat' && (
+          <CombatPanel
+            monsters={combatMonsters}
+            onChange={setCombatMonsters}
           />
         )}
 

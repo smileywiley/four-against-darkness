@@ -178,4 +178,5 @@ export interface Campaign {
   threads: StoryThread[];
 }
 
-export type ViewMode = 'split' | 'party' | 'map' | 'journal';
+export type ViewMode = 'split' | 'party' | 'map' | 'journal' | 'combat';
+
